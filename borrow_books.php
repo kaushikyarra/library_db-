@@ -13,24 +13,25 @@ $user_role = $_SESSION['user_role'];
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $book_id = $_POST['book_id'];
 
-    // For admin, allow selecting a user to borrow
+    // Handle user role: Admin selects user, regular user uses their session ID
     if ($user_role == 'admin' && isset($_POST['user_id'])) {
-        $user_id = $_POST['user_id']; // Admin selects user for borrowing
+        $selected_user_id = $_POST['user_id'];
+    } else {
+        $selected_user_id = $user_id;
     }
 
-    // Check if the book is available (additional check to ensure no negative copies)
+    // Check if the book is available (ensure no negative copies)
     $stmt = $conn->prepare("SELECT copies_available FROM books WHERE book_id = ?");
     $stmt->bind_param("i", $book_id);
     $stmt->execute();
     $result = $stmt->get_result();
     $book = $result->fetch_assoc();
 
-    // Check if the book has available copies
     if ($book && $book['copies_available'] > 0) {
         // Insert borrow record into borrow_records table
         $stmt = $conn->prepare("INSERT INTO borrow_records (book_id, user_id, borrow_date) VALUES (?, ?, NOW())");
-        $stmt->bind_param("ii", $book_id, $user_id);
-        
+        $stmt->bind_param("ii", $book_id, $selected_user_id);
+
         if ($stmt->execute()) {
             // Update available copies in books table
             $stmt = $conn->prepare("UPDATE books SET copies_available = copies_available - 1 WHERE book_id = ?");
@@ -38,11 +39,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             if ($stmt->execute()) {
                 $message = "Book borrowed successfully!";
             } else {
-                // Error in updating book availability
                 $message = "Error updating book availability.";
             }
         } else {
-            // Error in inserting borrow record
             $message = "Error borrowing the book.";
         }
     } else {
@@ -61,7 +60,6 @@ if ($user_role == 'admin') {
 $stmt = $conn->prepare("SELECT book_id, title, copies_available FROM books WHERE copies_available > 0");
 $stmt->execute();
 $books_result = $stmt->get_result();
-
 ?>
 
 <!DOCTYPE html>
@@ -148,33 +146,32 @@ $books_result = $stmt->get_result();
     </style>
 </head>
 <body>
-
     <div class="container">
         <h2>Borrow a Book</h2>
         <?php if (isset($message)): ?>
             <p class="message"><?php echo $message; ?></p>
         <?php endif; ?>
 
-        <?php if ($user_role == 'admin'): ?>
-            <!-- Admin selects user to borrow a book -->
-            <form method="POST" action="borrow_books.php">
+        <form method="POST" action="borrow_books.php">
+            <?php if ($user_role == 'admin'): ?>
+                <!-- Admin selects user to borrow a book -->
                 <select name="user_id" required>
                     <option value="">Select User</option>
                     <?php while ($row = $users_result->fetch_assoc()): ?>
                         <option value="<?php echo $row['user_id']; ?>"><?php echo $row['username']; ?></option>
                     <?php endwhile; ?>
                 </select><br>
-        <?php endif; ?>
+            <?php endif; ?>
 
-        <select name="book_id" required>
-            <option value="">Select Book</option>
-            <?php while ($book = $books_result->fetch_assoc()): ?>
-                <option value="<?php echo $book['book_id']; ?>">
-                    <?php echo $book['title']; ?> (<?php echo $book['copies_available']; ?> available)
-                </option>
-            <?php endwhile; ?>
-        </select><br>
-        <button type="submit">Borrow</button>
+            <select name="book_id" required>
+                <option value="">Select Book</option>
+                <?php while ($book = $books_result->fetch_assoc()): ?>
+                    <option value="<?php echo $book['book_id']; ?>">
+                        <?php echo $book['title']; ?> (<?php echo $book['copies_available']; ?> available)
+                    </option>
+                <?php endwhile; ?>
+            </select><br>
+            <button type="submit">Borrow</button>
         </form>
 
         <h3>Available Books</h3>
@@ -184,7 +181,6 @@ $books_result = $stmt->get_result();
                 <th>Available Copies</th>
             </tr>
             <?php
-            // Re-fetch available books for display
             $stmt->execute();
             $books_result = $stmt->get_result();
             while ($book = $books_result->fetch_assoc()) {
@@ -193,11 +189,9 @@ $books_result = $stmt->get_result();
             ?>
         </table>
 
-        <!-- Back to Dashboard Button -->
         <a href="dashboard.php">
             <button class="back-btn">Back to Dashboard</button>
         </a>
     </div>
-
 </body>
 </html>

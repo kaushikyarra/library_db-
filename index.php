@@ -181,7 +181,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['register'])) {
             <?php if (isset($login_error)) { echo "<p class='error'>$login_error</p>"; } ?>
 
             <!-- Link to toggle to registration form -->
-            <span class="toggle-link" onclick="toggleForm()">Don't have an account? Register</span>
+            <span class="toggle-link" onclick="toggleForm()">Don't have an account? Register</span><br>
+            <!-- New link to view events -->
+            <span class="toggle-link"><a href="events.php">View Events</a></span>
         </div>
 
         <!-- Registration Form (Initially hidden) -->

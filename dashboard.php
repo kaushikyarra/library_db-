@@ -185,6 +185,7 @@ $borrow_result = $stmt->get_result();
         <div class="actions">
             <a href="borrow_books.php">Borrow Books</a>
             <a href="return_books.php">Return Books</a>
+            <a href="news.php">News</a> <!-- Added News Button -->
             <a href="logout.php" class="logout">Logout</a>
         </div>
 
@@ -193,7 +194,7 @@ $borrow_result = $stmt->get_result();
                 <h3>Admin Actions</h3>
                 <a href="manage_books.php">Manage Books</a>
                 <a href="admin_transaction.php">View Transactions</a>
-                <a href="admin_users.php">Manage Users</a> <!-- New Button -->
+                <a href="admin_users.php">Manage Users</a>
             </div>
         <?php endif; ?>
 
